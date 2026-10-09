@@ -2,12 +2,12 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 
-from data import train_images_split, train_labels_split, val_images, val_labels, test_images, test_labels
+from src.data import train_images_split, train_labels_split, val_images, val_labels, test_images, test_labels
 from sklearn.metrics import confusion_matrix
 
 model = tf.keras.Sequential([
     tf.keras.layers.Flatten(input_shape=(28, 28)),
-    tf.keras.layers.Dense(128, activation="relu"),
+    tf.keras.layers.Dense(256, activation="relu"),
     tf.keras.layers.Dense(10, activation="softmax")
 ])
 
