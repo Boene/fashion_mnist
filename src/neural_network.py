@@ -1,7 +1,8 @@
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import numpy as np
 
-from data import train_images, train_labels, test_images, test_labels
+from data import train_images_split, train_labels_split, val_images, val_labels, test_images, test_labels
 from sklearn.metrics import confusion_matrix
 
 model = tf.keras.Sequential([
@@ -16,11 +17,27 @@ model.compile(
     metrics=["accuracy"]
 )
 
-history = model.fit(
-    train_images,
-    train_labels,
-    epochs=10
+early_stopping = tf.keras.callbacks.EarlyStopping(
+    monitor="val_loss",
+    patience=3,
+    restore_best_weights=True
 )
+
+history = model.fit(
+    train_images_split,
+    train_labels_split,
+    epochs=30,
+    validation_data=(val_images, val_labels),
+    callbacks=[early_stopping]
+)
+
+### Model speichern & laden ###
+
+#model.save("models/model_10.keras")
+
+#model = tf.keras.models.load_model("models/model_10.keras")
+
+###############################
 
 test_loss, test_accuracy = model.evaluate(
     test_images,
@@ -45,6 +62,9 @@ labels = [
 predictions = model.predict(test_images, verbose=0)
 predicted_labels = predictions.argmax(axis=1)
 
+val_losses = history.history["val_loss"]
+best_epoch = np.argmin(val_losses) + 1
+
 cm = confusion_matrix(test_labels, predicted_labels)
 
 # Liste mit Indizes der Bilder, entsprechend der beiden Labels
@@ -55,6 +75,7 @@ indices = [
 ]
 
 # Plot Accuracy und Loss
+
 """ 
 plt.plot(history.history["accuracy"])
 plt.xlabel("Epoche")
@@ -67,7 +88,7 @@ plt.xlabel("Epoche")
 plt.ylabel("Loss")
 plt.title("Training Loss")
 plt.show()
- """
+"""
 # Bilder mit realem vs vorhergesamten Label
 
 """
@@ -91,7 +112,7 @@ plt.show()
 """
 
 ### Heatmap real vs vorhergesagt
-""" 
+"""
 print("Anzahl:", len(indices))
 print("Indices:", indices)
 
@@ -126,9 +147,38 @@ fig.text(
 
 plt.tight_layout()
 plt.show()
+
 """
+### 
+
+fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+epochs = range(1, len(history.history["loss"]) + 1)
+
+# Loss
+ax[0].plot(epochs, history.history["loss"], label="Training")
+ax[0].plot(epochs, history.history["val_loss"], label="Validation")
+ax[0].set_xlabel("Epoch")
+ax[0].set_ylabel("Loss")
+ax[0].set_title("Loss")
+ax[0].legend()
+ax[0].grid()
+
+# Accuracy
+ax[1].plot(epochs, history.history["accuracy"], label="Training")
+ax[1].plot(epochs, history.history["val_accuracy"], label="Validation")
+ax[1].set_xlabel("Epoch")
+ax[1].set_ylabel("Accuracy")
+ax[1].set_title("Accuracy")
+ax[1].legend()
+ax[1].grid()
+
+plt.tight_layout()
+plt.show()
 
 ###
 
-print("Test Loss: ", test_loss)
-print("Test Accuracy: ", test_accuracy)
+print("final Test Loss: ", test_loss)
+print("final Test Accuracy: ", test_accuracy)
+print("----------------------------------------------------")
+print(f"Beste Epoche [loss]: {best_epoch}")
+print(f"Validation Loss: {val_losses[best_epoch - 1]:.4f}")
